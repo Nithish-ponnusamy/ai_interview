@@ -1,0 +1,63 @@
+version: "3.8"
+
+services:
+  backend-dev:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile.dev
+    container_name: resume-backend-dev
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=development
+      - PORT=5000
+      - CHOKIDAR_USEPOLLING=true
+    volumes:
+      - ../backend:/app
+      - /app/node_modules
+      - dev_uploads:/app/uploads
+    restart: unless-stopped
+    networks:
+      - dev-network
+
+  frontend-dev:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile.dev
+    container_name: resume-frontend-dev
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:5000
+      - CHOKIDAR_USEPOLLING=true
+    volumes:
+      - ../frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend-dev
+    restart: unless-stopped
+    networks:
+      - dev-network
+
+  mongodb-dev:
+    image: mongo:6.0
+    container_name: resume-mongodb-dev
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=dev_password
+      - MONGO_INITDB_DATABASE=resume_dev
+    volumes:
+      - dev_mongodb_data:/data/db
+    restart: unless-stopped
+    networks:
+      - dev-network
+
+volumes:
+  dev_uploads:
+  dev_mongodb_data:
+
+networks:
+  dev-network:
+    driver: bridge
